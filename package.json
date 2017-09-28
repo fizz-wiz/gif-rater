@@ -7,6 +7,17 @@
   "license": "Unlicense",
   "scripts": {
     "build": "yarn build:elm",
-    "build:elm": "elm make src/Main.elm --output public/index.js --debug"
+    "build:elm": "elm make src/Main.elm --output public/index.js",
+    "watch": "yarn run watch:elm & yarn run watch:node",
+    "watch:elm": "elm-live src/Main.elm --dir=public --output=public/index.js --debug",
+    "watch:node": "nodemon index.js --ignore 'public/*'"
+  },
+  "dependencies": {
+    "dotenv": "^4.0.0",
+    "express": "^4.15.5",
+    "r2": "^2.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^1.12.1"
   }
 }

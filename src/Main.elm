@@ -53,5 +53,5 @@ update msg model =
 view : Model -> Html Msg
 view model =
     div []
-        [ h1 [] [ text "gif-rater" ]
+        [ h1 [] [ text "gif-rater changed" ]
         ]
