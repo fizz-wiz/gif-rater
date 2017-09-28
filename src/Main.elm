@@ -1,7 +1,11 @@
 module Main exposing (..)
 
 import Http
-import Html exposing (Html, div, h1, text)
+import Json.Decode as Decode
+import RemoteData exposing (WebData)
+import Html.Attributes exposing (src)
+import Html exposing (Html, div, h1, text, img)
+import Json.Decode.Pipeline exposing (decode, required)
 
 
 main : Program Never Model Msg
@@ -16,42 +20,58 @@ main =
 
 type Msg
     = Noop
-    | NewGifRequest (Result Http.Error Gif)
+    | NewGifRequest (WebData Gif)
     | NewGif Topic
-
 
 
 
 -- MODEL
 
+
 type alias Topic =
     String
+
 
 type alias Gif =
     { url : String
     , embedUrl : String
     }
 
+
 type alias Model =
-    { maybeGif : Maybe Gif
+    { gif : WebData Gif
     , topics : List Topic
     }
 
 
 initialModel : Model
 initialModel =
-    { maybeGif = Nothing
-    , topics = ["dogs"]
+    { gif = RemoteData.NotAsked
+    , topics = [ "dogs" ]
     }
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( initialModel, Cmd.none )
+    ( { initialModel | gif = RemoteData.Loading }, fetchGif "dogs" )
 
 
 
 -- UPDATE
+
+
+gifDecoder : Decode.Decoder Gif
+gifDecoder =
+    decode Gif
+        |> required "url" Decode.string
+        |> required "embedUrl" Decode.string
+
+
+fetchGif : Topic -> Cmd Msg
+fetchGif topic =
+    Http.get ("/gifs?topic=" ++ topic) gifDecoder
+        |> RemoteData.sendRequest
+        |> Cmd.map NewGifRequest
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -60,22 +80,40 @@ update msg model =
         Noop ->
             ( model, Cmd.none )
 
-        NewGifRequest (Err error) ->
+        NewGifRequest (RemoteData.Failure error) ->
+            -- TODO
             Debug.crash "Get new image - error"
 
-        NewGifRequest (Ok image) ->
-            Debug.crash "Get new image"
-
+        NewGifRequest response ->
+            ( { model | gif = response }, Cmd.none )
 
         NewGif topic ->
-            Debug.crash "Get new iamge"
+            ( model, fetchGif topic )
+
 
 
 -- VIEW
+
+
+renderGif : WebData Gif -> Html Msg
+renderGif gif =
+    case gif of
+        RemoteData.NotAsked ->
+            text ""
+
+        RemoteData.Loading ->
+            text "Loading..."
+
+        RemoteData.Failure error ->
+            Debug.crash "RemoteData.Failure error in model"
+
+        RemoteData.Success gif ->
+            img [ src gif.embedUrl ] []
 
 
 view : Model -> Html Msg
 view model =
     div []
         [ h1 [] [ text "gif-rater changed" ]
+        , renderGif model.gif
         ]
