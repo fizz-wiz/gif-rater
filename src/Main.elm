@@ -129,7 +129,13 @@ update msg model =
             ( model, fetchGif topic )
 
         UpvoteRequest (RemoteData.Success vote) ->
-            ( { model | sessionUpvotes = model.sessionUpvotes ++ [ vote ] }, fetchGif "dogs" )
+            ( { model
+                | sessionUpvotes = model.sessionUpvotes ++ [ vote ]
+                , voteRequest = RemoteData.Success vote
+                , gif = RemoteData.Loading
+              }
+            , fetchGif "dogs"
+            )
 
         UpvoteRequest response ->
             ( { model | voteRequest = response }, Cmd.none )
@@ -137,13 +143,19 @@ update msg model =
         Upvote ->
             case model.gif of
                 RemoteData.Success gif ->
-                    ( model, upvote gif.id )
+                    ( { model | voteRequest = RemoteData.Loading }, upvote gif.id )
 
                 _ ->
                     ( model, Cmd.none )
 
         DownvoteRequest (RemoteData.Success vote) ->
-            ( { model | sessionDownvotes = model.sessionDownvotes ++ [ vote ] }, fetchGif "dogs" )
+            ( { model
+                | sessionDownvotes = model.sessionDownvotes ++ [ vote ]
+                , voteRequest = RemoteData.Success vote
+                , gif = RemoteData.Loading
+              }
+            , fetchGif "dogs"
+            )
 
         DownvoteRequest response ->
             ( { model | voteRequest = response }, Cmd.none )
@@ -151,7 +163,7 @@ update msg model =
         Downvote ->
             case model.gif of
                 RemoteData.Success gif ->
-                    ( model, downvote gif.id )
+                    ( { model | voteRequest = RemoteData.Loading }, downvote gif.id )
 
                 _ ->
                     ( model, Cmd.none )
@@ -177,11 +189,18 @@ renderGif gif =
             img [ src gif.embedUrl ] []
 
 
+isLoading : Model -> Bool
+isLoading model =
+    RemoteData.isLoading model.gif || RemoteData.isLoading model.voteRequest
+
+
 view : Model -> Html Msg
 view model =
     div []
         [ h1 [] [ text "gif-rater changed" ]
         , renderGif model.gif
-        , button [ onClick Downvote, disabled (RemoteData.isLoading model.voteRequest) ] [ text "downvote" ]
-        , button [ onClick Upvote, disabled (RemoteData.isLoading model.voteRequest) ] [ text "upvote" ]
+        , div []
+            [ button [ onClick Downvote, disabled (isLoading model) ] [ text "downvote" ]
+            , button [ onClick Upvote, disabled (isLoading model) ] [ text "upvote" ]
+            ]
         ]
