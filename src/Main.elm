@@ -3,10 +3,10 @@ module Main exposing (..)
 import Http
 import Json.Decode as Decode
 import RemoteData exposing (WebData)
-import Html.Attributes exposing (src)
+import Html.Events exposing (onClick)
+import Html.Attributes exposing (src, disabled)
 import Html exposing (Html, div, h1, text, img, button)
 import Json.Decode.Pipeline exposing (decode, required)
-import Html.Events exposing (onClick)
 
 
 main : Program Never Model Msg
@@ -43,9 +43,11 @@ type alias Gif =
     , embedUrl : String
     }
 
+
 type alias Vote =
     { id : Int
     }
+
 
 type alias Model =
     { gif : WebData Gif
@@ -89,20 +91,23 @@ fetchGif topic =
         |> RemoteData.sendRequest
         |> Cmd.map NewGifRequest
 
+
 voteDecoder : Decode.Decoder Vote
 voteDecoder =
     decode Vote
         |> required "id" Decode.int
 
+
 upvote : Int -> Cmd Msg
 upvote id =
-    Http.post ("/gifs/" ++ ( toString id ) ++ "/upvotes") Http.emptyBody voteDecoder
+    Http.post ("/gifs/" ++ (toString id) ++ "/upvotes") Http.emptyBody voteDecoder
         |> RemoteData.sendRequest
         |> Cmd.map UpvoteRequest
 
+
 downvote : Int -> Cmd Msg
 downvote id =
-    Http.post ("/gifs/" ++ ( toString id ) ++ "/downvotes") Http.emptyBody voteDecoder
+    Http.post ("/gifs/" ++ (toString id) ++ "/downvotes") Http.emptyBody voteDecoder
         |> RemoteData.sendRequest
         |> Cmd.map DownvoteRequest
 
@@ -132,7 +137,7 @@ update msg model =
         Upvote ->
             case model.gif of
                 RemoteData.Success gif ->
-                     ( model, upvote gif.id )
+                    ( model, upvote gif.id )
 
                 _ ->
                     ( model, Cmd.none )
@@ -146,11 +151,10 @@ update msg model =
         Downvote ->
             case model.gif of
                 RemoteData.Success gif ->
-                     ( model, downvote gif.id )
+                    ( model, downvote gif.id )
 
                 _ ->
                     ( model, Cmd.none )
-
 
 
 
@@ -178,6 +182,6 @@ view model =
     div []
         [ h1 [] [ text "gif-rater changed" ]
         , renderGif model.gif
-        , button [ onClick Downvote ] [ text "downvote" ]
-        , button [ onClick Upvote ] [ text "upvote" ]
+        , button [ onClick Downvote, disabled (RemoteData.isLoading model.voteRequest) ] [ text "downvote" ]
+        , button [ onClick Upvote, disabled (RemoteData.isLoading model.voteRequest) ] [ text "upvote" ]
         ]
