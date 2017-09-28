@@ -1,5 +1,6 @@
 module Main exposing (..)
 
+import Http
 import Html exposing (Html, div, h1, text)
 
 
@@ -15,19 +16,33 @@ main =
 
 type Msg
     = Noop
+    | NewGifRequest (Result Http.Error Gif)
+    | NewGif Topic
+
 
 
 
 -- MODEL
 
+type alias Topic =
+    String
+
+type alias Gif =
+    { url : String
+    , embedUrl : String
+    }
 
 type alias Model =
-    {}
+    { maybeGif : Maybe Gif
+    , topics : List Topic
+    }
 
 
 initialModel : Model
 initialModel =
-    {}
+    { maybeGif = Nothing
+    , topics = ["dogs"]
+    }
 
 
 init : ( Model, Cmd Msg )
@@ -45,6 +60,15 @@ update msg model =
         Noop ->
             ( model, Cmd.none )
 
+        NewGifRequest (Err error) ->
+            Debug.crash "Get new image - error"
+
+        NewGifRequest (Ok image) ->
+            Debug.crash "Get new image"
+
+
+        NewGif topic ->
+            Debug.crash "Get new iamge"
 
 
 -- VIEW
