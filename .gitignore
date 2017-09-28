@@ -1,5 +1,6 @@
 /public/index.js
 .env
+*.sqlite
 
 # Created by https://www.gitignore.io/api/elm
 
