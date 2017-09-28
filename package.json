@@ -1,0 +1,12 @@
+{
+  "name": "gif-rater",
+  "version": "1.0.0",
+  "description": "ratings, but for gifs",
+  "main": "index.js",
+  "repository": "git@github.com:fizz-wiz/gif-rater.git",
+  "license": "Unlicense",
+  "scripts": {
+    "build": "yarn build:elm",
+    "build:elm": "elm make src/Main.elm --output public/index.js --debug"
+  }
+}
