@@ -4,9 +4,9 @@ import Http
 import Json.Decode as Decode
 import RemoteData exposing (WebData)
 import Html.Events exposing (onClick)
-import Html.Attributes exposing (src, disabled)
 import Html exposing (Html, div, h1, text, img, button)
 import Json.Decode.Pipeline exposing (decode, required)
+import Html.Attributes exposing (src, disabled, class, style)
 
 
 main : Program Never Model Msg
@@ -177,16 +177,16 @@ renderGif : WebData Gif -> Html Msg
 renderGif gif =
     case gif of
         RemoteData.NotAsked ->
-            text ""
+            div [ class "gif" ] [ text "" ]
 
         RemoteData.Loading ->
-            text "Loading..."
+            div [ class "gif" ] [ text "" ]
 
         RemoteData.Failure error ->
             Debug.crash "RemoteData.Failure error in model"
 
         RemoteData.Success gif ->
-            img [ src gif.embedUrl ] []
+            div [ class "gif", style [ ( "background-image", ("url(" ++ gif.embedUrl ++ ")") ) ] ] []
 
 
 isLoading : Model -> Bool
@@ -196,11 +196,22 @@ isLoading model =
 
 view : Model -> Html Msg
 view model =
-    div []
-        [ h1 [] [ text "gif-rater changed" ]
-        , renderGif model.gif
-        , div []
-            [ button [ onClick Downvote, disabled (isLoading model) ] [ text "downvote" ]
-            , button [ onClick Upvote, disabled (isLoading model) ] [ text "upvote" ]
+    div [ class "body" ]
+        [ div [ class "card" ]
+            [ renderGif model.gif
+            , div [ class "vote-buttons" ]
+                [ button
+                    [ class "vote-button downvote-button"
+                    , onClick Downvote
+                    , disabled (isLoading model)
+                    ]
+                    [ text "👎" ]
+                , button
+                    [ class "vote-button upvote-button"
+                    , onClick Upvote
+                    , disabled (isLoading model)
+                    ]
+                    [ text "👍" ]
+                ]
             ]
         ]
