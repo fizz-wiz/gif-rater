@@ -9,7 +9,8 @@ let app = express()
 app.use(express.static(`${__dirname}/public`))
 
 app.get('/topics', async (request, response, next) => {
-  const topics = await db.all('SELECT id, name FROM topic');
+  const topics = await db.all('SELECT id, name FROM topic')
+
   response.json(topics)
 })
 
@@ -17,6 +18,10 @@ app.get('/gifs', async (request, response, next) => {
   const { topic } = request.query
 
   const { name } = await db.get('SELECT name FROM topic WHERE id = $id', { $id: topic }) || {}
+
+  if (!name) {
+    return response.status(404).json()
+  }
 
   const json = await r2(`https://api.giphy.com/v1/gifs/random?tag=${name}&api_key=${process.env.GIPHY_API_KEY}`).json
 
