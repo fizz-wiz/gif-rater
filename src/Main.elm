@@ -3,10 +3,10 @@ module Main exposing (..)
 import Http
 import Json.Decode as Decode
 import RemoteData exposing (WebData)
-import Html.Events exposing (onClick)
-import Html exposing (Html, div, h1, text, img, button)
+import Html.Events exposing (onClick, onInput)
 import Json.Decode.Pipeline exposing (decode, required)
 import Html.Attributes exposing (src, disabled, class, style)
+import Html exposing (Html, div, h1, text, img, button, label, select, option)
 
 
 main : Program Never Model Msg
@@ -21,6 +21,7 @@ main =
 
 type Msg
     = Noop
+    | ChangeTopic Topic
     | NewGifRequest (WebData Gif)
     | NewGif Topic
     | UpvoteRequest (WebData Vote)
@@ -52,6 +53,7 @@ type alias Vote =
 type alias Model =
     { gif : WebData Gif
     , topics : List Topic
+    , selectedTopic : Topic
     , sessionUpvotes : List Vote
     , sessionDownvotes : List Vote
     , voteRequest : WebData Vote
@@ -61,7 +63,8 @@ type alias Model =
 initialModel : Model
 initialModel =
     { gif = RemoteData.NotAsked
-    , topics = [ "dogs" ]
+    , topics = [ "dogs", "cats", "sea otters", "guinea pigs" ]
+    , selectedTopic = "dogs"
     , sessionUpvotes = []
     , sessionDownvotes = []
     , voteRequest = RemoteData.NotAsked
@@ -70,7 +73,7 @@ initialModel =
 
 init : ( Model, Cmd Msg )
 init =
-    ( { initialModel | gif = RemoteData.Loading }, fetchGif "dogs" )
+    ( { initialModel | gif = RemoteData.Loading }, fetchGif initialModel.selectedTopic )
 
 
 
@@ -118,6 +121,9 @@ update msg model =
         Noop ->
             ( model, Cmd.none )
 
+        ChangeTopic topic ->
+            ( { model | selectedTopic = topic }, fetchGif topic )
+
         NewGifRequest (RemoteData.Failure error) ->
             -- TODO
             Debug.crash "Get new image - error"
@@ -134,7 +140,7 @@ update msg model =
                 , voteRequest = RemoteData.Success vote
                 , gif = RemoteData.Loading
               }
-            , fetchGif "dogs"
+            , fetchGif model.selectedTopic
             )
 
         UpvoteRequest response ->
@@ -154,7 +160,7 @@ update msg model =
                 , voteRequest = RemoteData.Success vote
                 , gif = RemoteData.Loading
               }
-            , fetchGif "dogs"
+            , fetchGif model.selectedTopic
             )
 
         DownvoteRequest response ->
@@ -194,10 +200,21 @@ isLoading model =
     RemoteData.isLoading model.gif || RemoteData.isLoading model.voteRequest
 
 
+viewOption : Topic -> Html Msg
+viewOption topic =
+    option []
+        [ text topic
+        ]
+
+
 view : Model -> Html Msg
 view model =
     div [ class "body" ]
-        [ div [ class "card" ]
+        [ div []
+            [ label [] [ text "Topic:" ]
+            , select [ onInput ChangeTopic ] <| List.map viewOption model.topics
+            ]
+        , div [ class "card" ]
             [ renderGif model.gif
             , div [ class "vote-buttons" ]
                 [ button
