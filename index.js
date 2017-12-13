@@ -41,6 +41,20 @@ app.get('/gifs', async (request, response, next) => {
   response.json({ id, url, embedUrl })
 })
 
+app.get('/gifs/top', async (request, response, next) => {
+  const gifs = await db.all(
+    `SELECT gif.id, gif.url, gif.embed_url, count(upvote.id) - count(downvote.id) AS net_votes
+     FROM gif
+     LEFT JOIN upvote ON gif.id = upvote.gif_id
+     LEFT JOIN downvote ON gif.id = downvote.gif_id
+     GROUP BY gif.id HAVING net_votes > 0
+     ORDER BY net_votes DESC
+     LIMIT 20`
+  )
+
+  response.json(gifs)
+})
+
 const gifExists = async id => db.get('SELECT id FROM gif WHERE id = $id', { $id: id })
 
 app.post('/gifs/:id/upvotes', async (request, response, next) => {
