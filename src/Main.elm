@@ -1,11 +1,12 @@
 module Main exposing (..)
 
 import Http
+import List.Extra
 import Json.Decode as Decode
 import RemoteData exposing (WebData)
 import Html.Events exposing (onClick, onInput)
 import Json.Decode.Pipeline exposing (decode, required)
-import Html.Attributes exposing (src, disabled, class, style)
+import Html.Attributes exposing (src, disabled, class, style, value)
 import Html exposing (Html, div, h1, text, img, button, label, select, option)
 
 
@@ -21,7 +22,8 @@ main =
 
 type Msg
     = Noop
-    | ChangeTopic Topic
+    | TopicsRequest (WebData (List Topic))
+    | ChangeTopic String
     | NewGifRequest (WebData Gif)
     | NewGif Topic
     | UpvoteRequest (WebData Vote)
@@ -35,7 +37,9 @@ type Msg
 
 
 type alias Topic =
-    String
+    { id : Int
+    , name : String
+    }
 
 
 type alias Gif =
@@ -52,8 +56,8 @@ type alias Vote =
 
 type alias Model =
     { gif : WebData Gif
-    , topics : List Topic
-    , selectedTopic : Topic
+    , topics : WebData (List Topic)
+    , selectedTopicId : Int
     , sessionUpvotes : List Vote
     , sessionDownvotes : List Vote
     , voteRequest : WebData Vote
@@ -63,8 +67,8 @@ type alias Model =
 initialModel : Model
 initialModel =
     { gif = RemoteData.NotAsked
-    , topics = [ "Dogs", "Cats", "Sea Otters", "Guinea Pigs" ]
-    , selectedTopic = "Dogs"
+    , topics = RemoteData.NotAsked
+    , selectedTopicId = 0
     , sessionUpvotes = []
     , sessionDownvotes = []
     , voteRequest = RemoteData.NotAsked
@@ -73,11 +77,35 @@ initialModel =
 
 init : ( Model, Cmd Msg )
 init =
-    ( { initialModel | gif = RemoteData.Loading }, fetchGif initialModel.selectedTopic )
+    ( { initialModel
+        | topics = RemoteData.Loading
+        , gif = RemoteData.Loading
+      }
+    , fetchTopics
+    )
 
 
 
 -- UPDATE
+
+
+topicDecoder : Decode.Decoder Topic
+topicDecoder =
+    decode Topic
+        |> required "id" Decode.int
+        |> required "name" Decode.string
+
+
+topicsDecoder : Decode.Decoder (List Topic)
+topicsDecoder =
+    Decode.list topicDecoder
+
+
+fetchTopics : Cmd Msg
+fetchTopics =
+    Http.get "/topics" topicsDecoder
+        |> RemoteData.sendRequest
+        |> Cmd.map TopicsRequest
 
 
 gifDecoder : Decode.Decoder Gif
@@ -90,7 +118,7 @@ gifDecoder =
 
 fetchGif : Topic -> Cmd Msg
 fetchGif topic =
-    Http.get ("/gifs?topic=" ++ topic) gifDecoder
+    Http.get ("/gifs?topic=" ++ (toString topic.id)) gifDecoder
         |> RemoteData.sendRequest
         |> Cmd.map NewGifRequest
 
@@ -115,14 +143,51 @@ downvote id =
         |> Cmd.map DownvoteRequest
 
 
+findTopicById : Int -> WebData (List Topic) -> Topic
+findTopicById id topicsResponse =
+    case topicsResponse of
+        RemoteData.Success topics ->
+            case List.Extra.find (\x -> x.id == id) topics of
+                Nothing ->
+                    Debug.crash "This topic does not exist"
+
+                Just topic ->
+                    topic
+
+        _ ->
+            Debug.crash "No topics"
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Noop ->
             ( model, Cmd.none )
 
-        ChangeTopic topic ->
-            ( { model | selectedTopic = topic }, fetchGif topic )
+        TopicsRequest (RemoteData.Success topics) ->
+            case List.head topics of
+                Nothing ->
+                    Debug.crash "No topics"
+
+                Just selectedTopic ->
+                    ( { model
+                        | topics = RemoteData.Success topics
+                        , selectedTopicId = selectedTopic.id
+                      }
+                    , fetchGif selectedTopic
+                    )
+
+        TopicsRequest (RemoteData.Failure error) ->
+            -- TODO
+            Debug.crash "Get topics - error"
+
+        TopicsRequest _ ->
+            ( model, Cmd.none )
+
+        ChangeTopic topicId ->
+            ( { model | selectedTopicId = Result.withDefault 0 (String.toInt topicId) }
+            , fetchGif (findTopicById (Result.withDefault 0 (String.toInt topicId)) model.topics)
+            )
 
         NewGifRequest (RemoteData.Failure error) ->
             -- TODO
@@ -140,7 +205,7 @@ update msg model =
                 , voteRequest = RemoteData.Success vote
                 , gif = RemoteData.Loading
               }
-            , fetchGif model.selectedTopic
+            , fetchGif (findTopicById model.selectedTopicId model.topics)
             )
 
         UpvoteRequest response ->
@@ -160,7 +225,7 @@ update msg model =
                 , voteRequest = RemoteData.Success vote
                 , gif = RemoteData.Loading
               }
-            , fetchGif model.selectedTopic
+            , fetchGif (findTopicById model.selectedTopicId model.topics)
             )
 
         DownvoteRequest response ->
@@ -202,19 +267,29 @@ isLoading model =
 
 viewOption : Topic -> Html Msg
 viewOption topic =
-    option []
-        [ text topic
+    option [ value (toString topic.id) ]
+        [ text topic.name
         ]
+
+
+viewTopicSelection : WebData (List Topic) -> Html Msg
+viewTopicSelection topicsResponse =
+    case topicsResponse of
+        RemoteData.Success topics ->
+            label []
+                [ text "Topic: "
+                , select [ onInput ChangeTopic ] <| List.map viewOption topics
+                ]
+
+        _ ->
+            text ""
 
 
 view : Model -> Html Msg
 view model =
     div [ class "body" ]
         [ div [ class "topic-selection" ]
-            [ label []
-                [ text "Topic: "
-                , select [ onInput ChangeTopic ] <| List.map viewOption model.topics
-                ]
+            [ viewTopicSelection model.topics
             ]
         , div [ class "card" ]
             [ renderGif model.gif

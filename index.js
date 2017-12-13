@@ -8,10 +8,17 @@ let app = express()
 
 app.use(express.static(`${__dirname}/public`))
 
+app.get('/topics', async (request, response, next) => {
+  const topics = await db.all('SELECT id, name FROM topic');
+  response.json(topics)
+})
+
 app.get('/gifs', async (request, response, next) => {
   const { topic } = request.query
 
-  const json = await r2(`https://api.giphy.com/v1/gifs/random?tag=${topic}&api_key=${process.env.GIPHY_API_KEY}`).json
+  const { name } = await db.get('SELECT name FROM topic WHERE id = $id', { $id: topic }) || {}
+
+  const json = await r2(`https://api.giphy.com/v1/gifs/random?tag=${name}&api_key=${process.env.GIPHY_API_KEY}`).json
 
   const { id: giphyId, url, image_url: embedUrl } = json.data
 
@@ -19,8 +26,8 @@ app.get('/gifs', async (request, response, next) => {
 
   if (!id) {
     const { lastID } = await db.run(
-      'INSERT INTO gif (giphy_id, url, embed_url) VALUES ($giphyId, $url, $embedUrl)',
-      { $giphyId: giphyId, $url: url, $embedUrl: embedUrl }
+      'INSERT INTO gif (giphy_id, url, embed_url, topic_id) VALUES ($giphyId, $url, $embedUrl, $topicId)',
+      { $giphyId: giphyId, $url: url, $embedUrl: embedUrl, $topicId: topic }
     )
 
     id = lastID
