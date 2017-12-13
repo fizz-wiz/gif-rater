@@ -185,7 +185,7 @@ update msg model =
             ( model, Cmd.none )
 
         ChangeTopic topicId ->
-            ( { model | selectedTopicId = Result.withDefault 0 (String.toInt topicId) }
+            ( { model | selectedTopicId = Result.withDefault 0 (String.toInt topicId), gif = RemoteData.Loading }
             , fetchGif (findTopicById (Result.withDefault 0 (String.toInt topicId)) model.topics)
             )
 
