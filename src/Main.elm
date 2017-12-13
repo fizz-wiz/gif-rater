@@ -63,8 +63,8 @@ type alias Model =
 initialModel : Model
 initialModel =
     { gif = RemoteData.NotAsked
-    , topics = [ "dogs", "cats", "sea otters", "guinea pigs" ]
-    , selectedTopic = "dogs"
+    , topics = [ "Dogs", "Cats", "Sea Otters", "Guinea Pigs" ]
+    , selectedTopic = "Dogs"
     , sessionUpvotes = []
     , sessionDownvotes = []
     , voteRequest = RemoteData.NotAsked
@@ -210,9 +210,11 @@ viewOption topic =
 view : Model -> Html Msg
 view model =
     div [ class "body" ]
-        [ div []
-            [ label [] [ text "Topic:" ]
-            , select [ onInput ChangeTopic ] <| List.map viewOption model.topics
+        [ div [ class "topic-selection" ]
+            [ label []
+                [ text "Topic: "
+                , select [ onInput ChangeTopic ] <| List.map viewOption model.topics
+                ]
             ]
         , div [ class "card" ]
             [ renderGif model.gif

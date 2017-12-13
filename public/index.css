@@ -82,6 +82,10 @@ body {
   background-color: rgba(200, 20, 20, 1);
 }
 
+.topic-selection {
+    margin-top: 2rem;
+}
+
 @media (max-width: 500px) {
   .card {
     margin: 1rem 0 0;
