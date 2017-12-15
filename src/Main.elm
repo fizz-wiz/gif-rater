@@ -202,6 +202,19 @@ findTopicById id topicsResponse =
             Debug.crash "No topics"
 
 
+routeCmd : Route -> Topic -> Cmd Msg
+routeCmd route topic =
+    case route of
+        VoteRoute ->
+            fetchGif topic
+
+        TopRatedRoute ->
+            Cmd.none
+
+        NotFoundRoute ->
+            Cmd.none
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
@@ -209,7 +222,13 @@ update msg model =
             ( model, Cmd.none )
 
         LocationChange location ->
-            ( { model | route = parseLocation location }, Cmd.none )
+            let
+                newRoute =
+                    parseLocation location
+            in
+                ( { model | route = newRoute }
+                , routeCmd newRoute (findTopicById model.selectedTopicId model.topics)
+                )
 
         TopicsRequest (RemoteData.Success topics) ->
             case List.head topics of
@@ -221,7 +240,7 @@ update msg model =
                         | topics = RemoteData.Success topics
                         , selectedTopicId = selectedTopic.id
                       }
-                    , fetchGif selectedTopic
+                    , routeCmd model.route selectedTopic
                     )
 
         TopicsRequest (RemoteData.Failure error) ->
