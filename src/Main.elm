@@ -4,15 +4,17 @@ import Http
 import List.Extra
 import Json.Decode as Decode
 import RemoteData exposing (WebData)
+import Navigation exposing (Location)
+import UrlParser exposing (Parser, (</>))
 import Html.Events exposing (onClick, onInput)
 import Json.Decode.Pipeline exposing (decode, required)
-import Html.Attributes exposing (src, disabled, class, style, value)
-import Html exposing (Html, div, h1, text, img, button, label, select, option)
+import Html.Attributes exposing (src, disabled, class, style, value, href)
+import Html exposing (Html, a, div, h1, text, img, button, label, select, option)
 
 
 main : Program Never Model Msg
 main =
-    Html.program
+    Navigation.program LocationChange
         { subscriptions = (\_ -> Sub.none)
         , view = view
         , update = update
@@ -22,6 +24,7 @@ main =
 
 type Msg
     = Noop
+    | LocationChange Location
     | TopicsRequest (WebData (List Topic))
     | ChangeTopic String
     | NewGifRequest (WebData Gif)
@@ -55,7 +58,8 @@ type alias Vote =
 
 
 type alias Model =
-    { gif : WebData Gif
+    { route : Route
+    , gif : WebData Gif
     , topics : WebData (List Topic)
     , selectedTopicId : Int
     , sessionUpvotes : List Vote
@@ -66,7 +70,8 @@ type alias Model =
 
 initialModel : Model
 initialModel =
-    { gif = RemoteData.NotAsked
+    { route = VoteRoute
+    , gif = RemoteData.NotAsked
     , topics = RemoteData.NotAsked
     , selectedTopicId = 0
     , sessionUpvotes = []
@@ -75,14 +80,53 @@ initialModel =
     }
 
 
-init : ( Model, Cmd Msg )
-init =
+init : Location -> ( Model, Cmd Msg )
+init location =
     ( { initialModel
-        | topics = RemoteData.Loading
+        | route = parseLocation location
+        , topics = RemoteData.Loading
         , gif = RemoteData.Loading
       }
     , fetchTopics
     )
+
+
+
+-- Routing
+
+
+votePath : String
+votePath =
+    "#"
+
+
+topRatedPath : String
+topRatedPath =
+    "#top-rated"
+
+
+type Route
+    = VoteRoute
+    | TopRatedRoute
+    | NotFoundRoute
+
+
+matchers : Parser (Route -> a) a
+matchers =
+    UrlParser.oneOf
+        [ UrlParser.map VoteRoute UrlParser.top
+        , UrlParser.map TopRatedRoute (UrlParser.s "top-rated")
+        ]
+
+
+parseLocation : Location -> Route
+parseLocation location =
+    case (UrlParser.parseHash matchers location) of
+        Just route ->
+            route
+
+        Nothing ->
+            NotFoundRoute
 
 
 
@@ -163,6 +207,9 @@ update msg model =
     case msg of
         Noop ->
             ( model, Cmd.none )
+
+        LocationChange location ->
+            ( { model | route = parseLocation location }, Cmd.none )
 
         TopicsRequest (RemoteData.Success topics) ->
             case List.head topics of
@@ -285,8 +332,8 @@ viewTopicSelection topicsResponse =
             text ""
 
 
-view : Model -> Html Msg
-view model =
+viewVotingPage : Model -> Html Msg
+viewVotingPage model =
     div [ class "body" ]
         [ div [ class "topic-selection" ]
             [ viewTopicSelection model.topics
@@ -307,5 +354,29 @@ view model =
                     ]
                     [ text "👍" ]
                 ]
+            ]
+        ]
+
+
+viewPageContent : Model -> Html Msg
+viewPageContent model =
+    case model.route of
+        VoteRoute ->
+            viewVotingPage model
+
+        TopRatedRoute ->
+            div [] [ text "top rated gifs..." ]
+
+        NotFoundRoute ->
+            h1 [] [ text "404, Not found!" ]
+
+
+view : Model -> Html Msg
+view model =
+    div []
+        [ viewPageContent model
+        , div []
+            [ a [ href votePath ] [ text "Rate Some Gifs" ]
+            , a [ href topRatedPath ] [ text "Top Rated" ]
             ]
         ]
