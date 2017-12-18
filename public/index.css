@@ -86,6 +86,30 @@ body {
     margin-top: 2rem;
 }
 
+.top-rated-container {
+  height: 100vh;
+  overflow: scroll;
+  display: grid;
+  grid-template-columns: repeat(4, 25%);
+
+  grid-row-gap: 25px;
+  grid-column-gap: 25px;
+
+  justify-content: center;
+}
+
+.top-rated-container__item {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+.top-rated-container__gif {
+  width: 100%;
+}
+
 @media (max-width: 500px) {
   .card {
     margin: 1rem 0 0;

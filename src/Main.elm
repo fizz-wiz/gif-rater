@@ -431,12 +431,12 @@ viewTopRatedPage model =
             Debug.crash "RemoteData.Failure error in model"
 
         RemoteData.Success gifs ->
-            ul []
+            div [ class "top-rated-container" ]
                 (List.map
                     (\gif ->
-                        ul []
-                            [ span [] [ text (toString gif.net_votes) ]
-                            , div [ class "gif", style [ ( "background-image", ("url(" ++ gif.embedUrl ++ ")") ) ] ] []
+                        div [ class "top-rated-container__item" ]
+                            [ div [ class "gif top-rated-container__gif", style [ ( "background-image", ("url(" ++ gif.embedUrl ++ ")") ) ] ] []
+                            , span [] [ text ("Net votes: " ++ (toString gif.net_votes)) ]
                             ]
                     )
                     gifs
