@@ -48,16 +48,16 @@ app.get('/gifs/top', async (request, response, next) => {
     `SELECT
        gif.id,
        gif.url,
-       gif.embed_url,
+       gif.embed_url as embedUrl,
        topic.name AS topic,
-       count(upvote.id) - count(downvote.id) AS net_votes
+       count(upvote.id) - count(downvote.id) AS netVotes
      FROM gif
      LEFT JOIN upvote ON gif.id = upvote.gif_id
      LEFT JOIN downvote ON gif.id = downvote.gif_id
      INNER JOIN topic ON gif.topic_id = topic.id
      ${topic ? 'WHERE topic.name LIKE $topic' : ''}
-     GROUP BY gif.id HAVING net_votes > 0
-     ORDER BY net_votes DESC
+     GROUP BY gif.id HAVING netVotes > 0
+     ORDER BY netVotes DESC
      LIMIT 20`,
      { $topic: topic }
   )
