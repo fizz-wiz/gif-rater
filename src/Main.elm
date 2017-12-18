@@ -9,7 +9,7 @@ import UrlParser exposing (Parser, (</>))
 import Html.Events exposing (onClick, onInput)
 import Json.Decode.Pipeline exposing (decode, required)
 import Html.Attributes exposing (src, disabled, class, style, value, href)
-import Html exposing (Html, a, div, h1, text, img, button, label, select, option)
+import Html exposing (Html, a, div, h1, ul, li, span, text, img, button, label, select, option)
 
 
 main : Program Never Model Msg
@@ -33,6 +33,7 @@ type Msg
     | Upvote
     | DownvoteRequest (WebData Vote)
     | Downvote
+    | TopRatedGifsRequest (WebData (List TopRatedGif))
 
 
 
@@ -52,6 +53,15 @@ type alias Gif =
     }
 
 
+type alias TopRatedGif =
+    { id : Int
+    , url : String
+    , embedUrl : String
+    , topic : String
+    , net_votes : Int
+    }
+
+
 type alias Vote =
     { id : Int
     }
@@ -65,6 +75,7 @@ type alias Model =
     , sessionUpvotes : List Vote
     , sessionDownvotes : List Vote
     , voteRequest : WebData Vote
+    , topRated : WebData (List TopRatedGif)
     }
 
 
@@ -77,6 +88,7 @@ initialModel =
     , sessionUpvotes = []
     , sessionDownvotes = []
     , voteRequest = RemoteData.NotAsked
+    , topRated = RemoteData.NotAsked
     }
 
 
@@ -187,6 +199,28 @@ downvote id =
         |> Cmd.map DownvoteRequest
 
 
+topRatedGifDecoder : Decode.Decoder TopRatedGif
+topRatedGifDecoder =
+    decode TopRatedGif
+        |> required "id" Decode.int
+        |> required "url" Decode.string
+        |> required "embedUrl" Decode.string
+        |> required "topic" Decode.string
+        |> required "netVotes" Decode.int
+
+
+topRatedGifsDecoder : Decode.Decoder (List TopRatedGif)
+topRatedGifsDecoder =
+    Decode.list topRatedGifDecoder
+
+
+fetchTopRatedGifs : Cmd Msg
+fetchTopRatedGifs =
+    Http.get "/gifs/top" topRatedGifsDecoder
+        |> RemoteData.sendRequest
+        |> Cmd.map TopRatedGifsRequest
+
+
 findTopicById : Int -> WebData (List Topic) -> Topic
 findTopicById id topicsResponse =
     case topicsResponse of
@@ -209,7 +243,7 @@ routeCmd route topic =
             fetchGif topic
 
         TopRatedRoute ->
-            Cmd.none
+            fetchTopRatedGifs
 
         NotFoundRoute ->
             Cmd.none
@@ -305,6 +339,13 @@ update msg model =
                 _ ->
                     ( model, Cmd.none )
 
+        TopRatedGifsRequest (RemoteData.Failure error) ->
+            -- TODO
+            Debug.crash ("Get top rated images - error: " ++ (toString error))
+
+        TopRatedGifsRequest response ->
+            ( { model | topRated = response }, Cmd.none )
+
 
 
 -- VIEW
@@ -377,6 +418,31 @@ viewVotingPage model =
         ]
 
 
+viewTopRatedPage : Model -> Html Msg
+viewTopRatedPage model =
+    case model.topRated of
+        RemoteData.NotAsked ->
+            div [] [ text "" ]
+
+        RemoteData.Loading ->
+            div [] [ text "Loading..." ]
+
+        RemoteData.Failure error ->
+            Debug.crash "RemoteData.Failure error in model"
+
+        RemoteData.Success gifs ->
+            ul []
+                (List.map
+                    (\gif ->
+                        ul []
+                            [ span [] [ text (toString gif.net_votes) ]
+                            , div [ class "gif", style [ ( "background-image", ("url(" ++ gif.embedUrl ++ ")") ) ] ] []
+                            ]
+                    )
+                    gifs
+                )
+
+
 viewPageContent : Model -> Html Msg
 viewPageContent model =
     case model.route of
@@ -384,7 +450,7 @@ viewPageContent model =
             viewVotingPage model
 
         TopRatedRoute ->
-            div [] [ text "top rated gifs..." ]
+            viewTopRatedPage model
 
         NotFoundRoute ->
             h1 [] [ text "404, Not found!" ]
