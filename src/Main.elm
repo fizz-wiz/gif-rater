@@ -394,25 +394,27 @@ viewTopicSelection topicsResponse =
 
 viewVotingPage : Model -> Html Msg
 viewVotingPage model =
-    div [ class "body" ]
-        [ div [ class "topic-selection" ]
-            [ viewTopicSelection model.topics
-            ]
-        , div [ class "card" ]
-            [ renderGif model.gif
-            , div [ class "vote-buttons" ]
-                [ button
-                    [ class "vote-button downvote-button"
-                    , onClick Downvote
-                    , disabled (isLoading model)
+    div []
+        [ div [ class "rate-gifs" ]
+            [ div [ class "topic-selection" ]
+                [ viewTopicSelection model.topics
+                ]
+            , div [ class "card" ]
+                [ renderGif model.gif
+                , div [ class "vote-buttons" ]
+                    [ button
+                        [ class "vote-button downvote-button"
+                        , onClick Downvote
+                        , disabled (isLoading model)
+                        ]
+                        [ text "👎" ]
+                    , button
+                        [ class "vote-button upvote-button"
+                        , onClick Upvote
+                        , disabled (isLoading model)
+                        ]
+                        [ text "👍" ]
                     ]
-                    [ text "👎" ]
-                , button
-                    [ class "vote-button upvote-button"
-                    , onClick Upvote
-                    , disabled (isLoading model)
-                    ]
-                    [ text "👍" ]
                 ]
             ]
         ]
@@ -431,16 +433,19 @@ viewTopRatedPage model =
             Debug.crash "RemoteData.Failure error in model"
 
         RemoteData.Success gifs ->
-            div [ class "top-rated-container" ]
-                (List.map
-                    (\gif ->
-                        div [ class "top-rated-container__item" ]
-                            [ div [ class "gif top-rated-container__gif", style [ ( "background-image", ("url(" ++ gif.embedUrl ++ ")") ) ] ] []
-                            , span [] [ text ("Net votes: " ++ (toString gif.net_votes)) ]
-                            ]
+            if List.length gifs == 0 then
+                text "No top rated images yet, please rate some!"
+            else
+                div [ class "image-grid" ]
+                    (List.map
+                        (\gif ->
+                            div [ class "image-grid__item" ]
+                                [ div [ class "gif image-grid__gif", style [ ( "background-image", ("url(" ++ gif.embedUrl ++ ")") ) ] ] []
+                                , span [ class "image-grid__label" ] [ text ("Net votes: " ++ (toString gif.net_votes)) ]
+                                ]
+                        )
+                        gifs
                     )
-                    gifs
-                )
 
 
 viewPageContent : Model -> Html Msg
@@ -456,12 +461,18 @@ viewPageContent model =
             h1 [] [ text "404, Not found!" ]
 
 
+viewHeader : Html Msg
+viewHeader =
+    div [ class "header" ]
+        [ h1 [ class "title" ] [ text "gif-rater" ]
+        , a [ class "m-l-auto", href votePath ] [ text "Rate Some Gifs" ]
+        , a [ href topRatedPath ] [ text "Top Rated" ]
+        ]
+
+
 view : Model -> Html Msg
 view model =
-    div []
-        [ viewPageContent model
-        , div []
-            [ a [ href votePath ] [ text "Rate Some Gifs" ]
-            , a [ href topRatedPath ] [ text "Top Rated" ]
-            ]
+    div [ class "body" ]
+        [ viewHeader
+        , viewPageContent model
         ]
