@@ -26,7 +26,8 @@ type Msg
     = Noop
     | LocationChange Location
     | TopicsRequest (WebData (List Topic))
-    | ChangeTopic String
+    | ChangeTopicVote String
+    | ChangeTopicTopRated String
     | NewGifRequest (WebData Gif)
     | NewGif Topic
     | UpvoteRequest (WebData Vote)
@@ -72,6 +73,7 @@ type alias Model =
     , gif : WebData Gif
     , topics : WebData (List Topic)
     , selectedTopicId : Int
+    , selectedTopicIdTopRated : Int
     , sessionUpvotes : List Vote
     , sessionDownvotes : List Vote
     , voteRequest : WebData Vote
@@ -85,6 +87,7 @@ initialModel =
     , gif = RemoteData.NotAsked
     , topics = RemoteData.NotAsked
     , selectedTopicId = 0
+    , selectedTopicIdTopRated = 0
     , sessionUpvotes = []
     , sessionDownvotes = []
     , voteRequest = RemoteData.NotAsked
@@ -214,9 +217,9 @@ topRatedGifsDecoder =
     Decode.list topRatedGifDecoder
 
 
-fetchTopRatedGifs : Cmd Msg
-fetchTopRatedGifs =
-    Http.get "/gifs/top" topRatedGifsDecoder
+fetchTopRatedGifs : Topic -> Cmd Msg
+fetchTopRatedGifs topic =
+    Http.get ("/gifs/top?topic=" ++ (toString topic.id)) topRatedGifsDecoder
         |> RemoteData.sendRequest
         |> Cmd.map TopRatedGifsRequest
 
@@ -243,7 +246,7 @@ routeCmd route topic =
             fetchGif topic
 
         TopRatedRoute ->
-            fetchTopRatedGifs
+            fetchTopRatedGifs topic
 
         NotFoundRoute ->
             Cmd.none
@@ -284,9 +287,17 @@ update msg model =
         TopicsRequest _ ->
             ( model, Cmd.none )
 
-        ChangeTopic topicId ->
+        ChangeTopicVote topicId ->
             ( { model | selectedTopicId = Result.withDefault 0 (String.toInt topicId), gif = RemoteData.Loading }
             , fetchGif (findTopicById (Result.withDefault 0 (String.toInt topicId)) model.topics)
+            )
+
+        ChangeTopicTopRated topicId ->
+            ( { model
+                | selectedTopicIdTopRated = Result.withDefault 0 (String.toInt topicId)
+                , topRated = RemoteData.Loading
+              }
+            , fetchTopRatedGifs (findTopicById (Result.withDefault 0 (String.toInt topicId)) model.topics)
             )
 
         NewGifRequest (RemoteData.Failure error) ->
@@ -379,13 +390,13 @@ viewOption topic =
         ]
 
 
-viewTopicSelection : WebData (List Topic) -> Html Msg
-viewTopicSelection topicsResponse =
+viewTopicSelection : WebData (List Topic) -> (String -> Msg) -> Html Msg
+viewTopicSelection topicsResponse onInputFunction =
     case topicsResponse of
         RemoteData.Success topics ->
             label []
                 [ text "Topic: "
-                , select [ onInput ChangeTopic ] <| List.map viewOption topics
+                , select [ onInput onInputFunction ] <| List.map viewOption topics
                 ]
 
         _ ->
@@ -397,7 +408,7 @@ viewVotingPage model =
     div []
         [ div [ class "rate-gifs" ]
             [ div [ class "topic-selection" ]
-                [ viewTopicSelection model.topics
+                [ viewTopicSelection model.topics (\topic -> ChangeTopicVote topic)
                 ]
             , div [ class "card" ]
                 [ renderGif model.gif
@@ -433,10 +444,9 @@ viewTopRatedPage model =
             Debug.crash "RemoteData.Failure error in model"
 
         RemoteData.Success gifs ->
-            if List.length gifs == 0 then
-                text "No top rated images yet, please rate some!"
-            else
-                div [ class "image-grid" ]
+            div []
+                [ viewTopicSelection model.topics (\topic -> ChangeTopicTopRated topic)
+                , div [ class "image-grid" ]
                     (List.map
                         (\gif ->
                             div [ class "image-grid__item" ]
@@ -446,6 +456,7 @@ viewTopRatedPage model =
                         )
                         gifs
                     )
+                ]
 
 
 viewPageContent : Model -> Html Msg
