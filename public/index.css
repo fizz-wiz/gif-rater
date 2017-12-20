@@ -19,8 +19,9 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  background-color: #fff;
+  background-color: black;
   border-radius: 4px;
+  padding: 5px;
   box-shadow: 0 1rem 2rem rgba(0, 0, 0, .5);
 }
 
@@ -34,6 +35,9 @@ body {
 .vote-buttons {
   display: flex;
   justify-content: space-between;
+  background-color: white;
+  border-bottom-left-radius: 4px;
+  border-bottom-right-radius: 4px;
 }
 
 .vote-button {
@@ -53,14 +57,6 @@ body {
 .vote-button[disabled] {
   cursor: not-allowed;
   opacity: .2;
-}
-
-.vote-button:first-child {
-  border-bottom-left-radius: 4px;
-}
-
-.vote-button:last-child {
-  border-bottom-right-radius: 4px;
 }
 
 .upvote-button,
