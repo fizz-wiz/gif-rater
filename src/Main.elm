@@ -9,7 +9,7 @@ import ClassNames exposing (classNames)
 import UrlParser exposing (Parser, (</>))
 import Html.Events exposing (onClick, onInput)
 import Json.Decode.Pipeline exposing (decode, required)
-import Html.Attributes exposing (src, disabled, class, style, value, href, selected)
+import Html.Attributes exposing (src, disabled, class, style, value, href, selected, target)
 import Html exposing (Html, a, div, h1, ul, li, span, text, img, button, label, select, option)
 
 
@@ -470,7 +470,7 @@ viewTopRatedPage model =
                     (List.map
                         (\gif ->
                             div [ class "image-grid__item" ]
-                                [ div [ class "gif image-grid__gif", style [ ( "background-image", ("url(" ++ gif.embedUrl ++ ")") ) ] ] []
+                                [ a [ target "_blank", href gif.url, class "gif image-grid__gif", style [ ( "background-image", ("url(" ++ gif.embedUrl ++ ")") ) ] ] []
                                 , span [ class "image-grid__label" ] [ text ("Net votes: " ++ (toString gif.net_votes)) ]
                                 ]
                         )
