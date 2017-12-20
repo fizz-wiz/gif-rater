@@ -413,9 +413,9 @@ viewTopicSelection : WebData (List Topic) -> Int -> (String -> Msg) -> Html Msg
 viewTopicSelection topicsResponse selectedTopicId onInputFunction =
     case topicsResponse of
         RemoteData.Success topics ->
-            label []
+            label [ class "topic-selection__label" ]
                 [ text "Topic: "
-                , select [ value (toString selectedTopicId), onInput onInputFunction ] <|
+                , select [ value (toString selectedTopicId), onInput onInputFunction, class "topic-selection__select" ] <|
                     List.map (viewOption selectedTopicId) topics
                 ]
 

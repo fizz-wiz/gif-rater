@@ -95,6 +95,20 @@ body {
   margin: 2rem;
 }
 
+.topic-selection__label {
+  width: 450px;
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+}
+
+.topic-selection__select {
+  flex: 100%;
+
+  height: 30px;
+  margin-left: 0.5rem;
+}
+
 .image-grid {
   width: 100vw;
   display: grid;
