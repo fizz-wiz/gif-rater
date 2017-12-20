@@ -84,6 +84,7 @@ body {
 }
 
 .page-content {
+  width: 100vw;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
@@ -164,8 +165,7 @@ body {
 }
 
 @media (max-width: 530px) {
-  .card {
-    margin: 1rem 0 0;
+  .card, .topic-selection__label {
     max-width: 90vw;
   }
 
