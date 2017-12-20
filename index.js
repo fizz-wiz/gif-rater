@@ -15,7 +15,7 @@ app.get('/topics', async (request, response, next) => {
 })
 
 app.get('/gifs', async (request, response, next) => {
-  const { topic } = request.query
+  const topic = request.query.topic || (await db.get('SELECT id FROM topic ORDER BY RANDOM() LIMIT 1')).id
 
   const { name } = await db.get('SELECT name FROM topic WHERE id = $id', { $id: topic }) || {}
 

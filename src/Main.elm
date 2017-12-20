@@ -48,6 +48,13 @@ type alias Topic =
     }
 
 
+anyTopic : Topic
+anyTopic =
+    { id = 0
+    , name = "Any"
+    }
+
+
 type alias Gif =
     { id : Int
     , url : String
@@ -176,9 +183,16 @@ gifDecoder =
 
 fetchGif : Topic -> Cmd Msg
 fetchGif topic =
-    Http.get ("/gifs?topic=" ++ (toString topic.id)) gifDecoder
-        |> RemoteData.sendRequest
-        |> Cmd.map NewGifRequest
+    let
+        url =
+            if topic.id == 0 then
+                "/gifs"
+            else
+                "/gifs?topic=" ++ (toString topic.id)
+    in
+        Http.get url gifDecoder
+            |> RemoteData.sendRequest
+            |> Cmd.map NewGifRequest
 
 
 voteDecoder : Decode.Decoder Vote
@@ -218,9 +232,16 @@ topRatedGifsDecoder =
 
 fetchTopRatedGifs : Topic -> Cmd Msg
 fetchTopRatedGifs topic =
-    Http.get ("/gifs/top?topic=" ++ (toString topic.id)) topRatedGifsDecoder
-        |> RemoteData.sendRequest
-        |> Cmd.map TopRatedGifsRequest
+    let
+        url =
+            if topic.id == 0 then
+                "/gifs/top"
+            else
+                "/gifs/top?topic=" ++ (toString topic.id)
+    in
+        Http.get url topRatedGifsDecoder
+            |> RemoteData.sendRequest
+            |> Cmd.map TopRatedGifsRequest
 
 
 findTopicById : Int -> WebData (List Topic) -> Topic
@@ -273,10 +294,9 @@ update msg model =
 
                 Just selectedTopic ->
                     ( { model
-                        | topics = RemoteData.Success topics
-                        , selectedTopicId = selectedTopic.id
+                        | topics = RemoteData.Success (anyTopic :: topics)
                       }
-                    , routeCmd model.route selectedTopic
+                    , routeCmd model.route anyTopic
                     )
 
         TopicsRequest (RemoteData.Failure error) ->
