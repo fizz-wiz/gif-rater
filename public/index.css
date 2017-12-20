@@ -82,7 +82,7 @@ body {
   background-color: rgba(200, 20, 20, 1);
 }
 
-.rate-gifs {
+.page-content {
   display: flex;
   flex-direction: column;
   justify-content: flex-start;

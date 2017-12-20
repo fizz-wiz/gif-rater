@@ -8,7 +8,7 @@ import Navigation exposing (Location)
 import UrlParser exposing (Parser, (</>))
 import Html.Events exposing (onClick, onInput)
 import Json.Decode.Pipeline exposing (decode, required)
-import Html.Attributes exposing (src, disabled, class, style, value, href)
+import Html.Attributes exposing (src, disabled, class, style, value, href, selected)
 import Html exposing (Html, a, div, h1, ul, li, span, text, img, button, label, select, option)
 
 
@@ -73,7 +73,6 @@ type alias Model =
     , gif : WebData Gif
     , topics : WebData (List Topic)
     , selectedTopicId : Int
-    , selectedTopicIdTopRated : Int
     , sessionUpvotes : List Vote
     , sessionDownvotes : List Vote
     , voteRequest : WebData Vote
@@ -87,7 +86,6 @@ initialModel =
     , gif = RemoteData.NotAsked
     , topics = RemoteData.NotAsked
     , selectedTopicId = 0
-    , selectedTopicIdTopRated = 0
     , sessionUpvotes = []
     , sessionDownvotes = []
     , voteRequest = RemoteData.NotAsked
@@ -294,7 +292,7 @@ update msg model =
 
         ChangeTopicTopRated topicId ->
             ( { model
-                | selectedTopicIdTopRated = Result.withDefault 0 (String.toInt topicId)
+                | selectedTopicId = Result.withDefault 0 (String.toInt topicId)
                 , topRated = RemoteData.Loading
               }
             , fetchTopRatedGifs (findTopicById (Result.withDefault 0 (String.toInt topicId)) model.topics)
@@ -383,20 +381,21 @@ isLoading model =
     RemoteData.isLoading model.gif || RemoteData.isLoading model.voteRequest
 
 
-viewOption : Topic -> Html Msg
-viewOption topic =
-    option [ value (toString topic.id) ]
+viewOption : Int -> Topic -> Html Msg
+viewOption selectedId topic =
+    option [ value (toString topic.id), selected (selectedId == topic.id) ]
         [ text topic.name
         ]
 
 
-viewTopicSelection : WebData (List Topic) -> (String -> Msg) -> Html Msg
-viewTopicSelection topicsResponse onInputFunction =
+viewTopicSelection : WebData (List Topic) -> Int -> (String -> Msg) -> Html Msg
+viewTopicSelection topicsResponse selectedTopicId onInputFunction =
     case topicsResponse of
         RemoteData.Success topics ->
             label []
                 [ text "Topic: "
-                , select [ onInput onInputFunction ] <| List.map viewOption topics
+                , select [ value (toString selectedTopicId), onInput onInputFunction ] <|
+                    List.map (viewOption selectedTopicId) topics
                 ]
 
         _ ->
@@ -406,9 +405,9 @@ viewTopicSelection topicsResponse onInputFunction =
 viewVotingPage : Model -> Html Msg
 viewVotingPage model =
     div []
-        [ div [ class "rate-gifs" ]
+        [ div [ class "page-content" ]
             [ div [ class "topic-selection" ]
-                [ viewTopicSelection model.topics (\topic -> ChangeTopicVote topic)
+                [ viewTopicSelection model.topics model.selectedTopicId (\topic -> ChangeTopicVote topic)
                 ]
             , div [ class "card" ]
                 [ renderGif model.gif
@@ -444,8 +443,8 @@ viewTopRatedPage model =
             Debug.crash "RemoteData.Failure error in model"
 
         RemoteData.Success gifs ->
-            div []
-                [ viewTopicSelection model.topics (\topic -> ChangeTopicTopRated topic)
+            div [ class "page-content" ]
+                [ div [ class "topic-selection" ] [ viewTopicSelection model.topics model.selectedTopicId (\topic -> ChangeTopicTopRated topic) ]
                 , div [ class "image-grid" ]
                     (List.map
                         (\gif ->
