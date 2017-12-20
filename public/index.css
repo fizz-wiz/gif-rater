@@ -164,6 +164,10 @@ body {
   margin-left: auto;
 }
 
+.m-r-1rem {
+  margin-right: 2rem;
+}
+
 .navigation-link {
   background: #33c3f0;
   color: #ffffff;
@@ -172,7 +176,8 @@ body {
   line-height: 3.5rem;
   text-decoration: none;
   text-align: center;
-  margin-right: 2px;
+  border-left: 1px solid white;
+  border-right: 1px solid white;
   width: 8rem;
 }
 

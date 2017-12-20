@@ -502,7 +502,7 @@ viewHeader route =
             ]
             [ text "Rate Some Gifs" ]
         , a
-            [ class (classNames [ ( "navigation-link", True ), ( "navigation-link-selected", route == TopRatedRoute ) ])
+            [ class (classNames [ ( "navigation-link", True ), ( "m-r-1rem", True ), ( "navigation-link-selected", route == TopRatedRoute ) ])
             , href topRatedPath
             ]
             [ text "Top Rated" ]
