@@ -152,6 +152,11 @@ body {
 .title {
   padding-left: 1rem;
   font-size: 1.5rem;
+  color: black;
+}
+
+.no-decoration {
+  text-decoration: none;
 }
 
 @media (max-width: 950px) {

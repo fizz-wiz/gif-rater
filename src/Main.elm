@@ -495,7 +495,7 @@ viewPageContent model =
 viewHeader : Route -> Html Msg
 viewHeader route =
     div [ class "header" ]
-        [ h1 [ class "title" ] [ text "gif-rater" ]
+        [ a [ class "no-decoration", href votePath ] [ h1 [ class "title" ] [ text "gif-rater" ] ]
         , a
             [ class (classNames [ ( "m-l-auto", True ), ( "navigation-link", True ), ( "navigation-link-selected", route == VoteRoute ) ])
             , href votePath
