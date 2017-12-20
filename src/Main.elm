@@ -5,6 +5,7 @@ import List.Extra
 import Json.Decode as Decode
 import RemoteData exposing (WebData)
 import Navigation exposing (Location)
+import ClassNames exposing (classNames)
 import UrlParser exposing (Parser, (</>))
 import Html.Events exposing (onClick, onInput)
 import Json.Decode.Pipeline exposing (decode, required)
@@ -471,18 +472,26 @@ viewPageContent model =
             h1 [] [ text "404, Not found!" ]
 
 
-viewHeader : Html Msg
-viewHeader =
+viewHeader : Route -> Html Msg
+viewHeader route =
     div [ class "header" ]
         [ h1 [ class "title" ] [ text "gif-rater" ]
-        , a [ class "m-l-auto", href votePath ] [ text "Rate Some Gifs" ]
-        , a [ href topRatedPath ] [ text "Top Rated" ]
+        , a
+            [ class (classNames [ ( "m-l-auto", True ), ( "navigation-link", True ), ( "navigation-link-selected", route == VoteRoute ) ])
+            , href votePath
+            ]
+            [ text "Rate Some Gifs" ]
+        , a
+            [ class (classNames [ ( "navigation-link", True ), ( "navigation-link-selected", route == TopRatedRoute ) ])
+            , href topRatedPath
+            ]
+            [ text "Top Rated" ]
         ]
 
 
 view : Model -> Html Msg
 view model =
     div [ class "body" ]
-        [ viewHeader
+        [ viewHeader model.route
         , viewPageContent model
         ]
